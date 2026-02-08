@@ -10,24 +10,19 @@ interface PuzzleSlotProps {
 }
 
 export const PuzzleSlot: React.FC<PuzzleSlotProps> = ({ id, acceptType, children, isLocked }) => {
-  const { isOver, setNodeRef } = useDroppable({
+  const { setNodeRef } = useDroppable({
     id: id,
     data: { acceptType },
     disabled: isLocked
   });
 
-  // Dynamic border color based on type when hovering
-  let borderColor = 'border-stone-300 bg-white/40 hover:bg-white/60';
+  // Default border styling
+  let borderColor = 'border-stone-300 bg-white/40';
   
   if (isLocked) {
-     borderColor = 'border-emerald-400 bg-emerald-100 shadow-inner';
-  } else if (isOver) {
-    if (acceptType === ItemType.JOINT) {
-      borderColor = 'border-sky-500 bg-sky-50/90';
-    } else {
-      borderColor = 'border-amber-500 bg-amber-50/90';
-    }
-  }
+     borderColor = 'border-red-400 bg-red-100 shadow-inner';
+  } 
+  // Visual feedback for isOver has been removed as requested
   
   return (
     <div

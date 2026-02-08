@@ -9,47 +9,51 @@ interface PuzzlePieceProps {
   type: ItemType;
   isOverlay?: boolean;
   disabled?: boolean;
+  style?: React.CSSProperties; // Added style prop
 }
 
-export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({ id, text, type, isOverlay, disabled }) => {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({ id, text, type, isOverlay, disabled, style: propStyle }) => {
+  // We disable the draggable hook if this component is being rendered 
+  // inside the DragOverlay (isOverlay). 
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: id,
     data: { type, text },
-    disabled: disabled
+    disabled: disabled || isOverlay
   });
 
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
-
   // Theme: Vibrant colors
-  // Joints = Sky Blue
-  // Functions = Amber/Orange
   const typeColor = type === ItemType.JOINT 
     ? 'bg-sky-100 border-sky-300 text-sky-900 shadow-sm ring-sky-200' 
     : 'bg-amber-100 border-amber-300 text-amber-900 shadow-sm ring-amber-200';
     
-  const hoverClasses = !disabled ? (type === ItemType.JOINT ? 'hover:bg-sky-200' : 'hover:bg-amber-200') : '';
+  // Removed hover classes to reduce visual noise
+  const hoverClasses = !disabled && !isOverlay ? (type === ItemType.JOINT ? '' : '') : '';
   const cursorClass = disabled ? 'cursor-not-allowed opacity-90' : 'cursor-grab active:cursor-grabbing';
 
-  // Added 'touch-none' to prevent browser scrolling while dragging on mobile
   const baseClasses = `
     relative flex items-center gap-2 p-3 rounded-md border
     ${cursorClass} text-sm font-medium
     transition-all duration-200 select-none touch-none w-full min-h-[50px]
     ${typeColor} ${hoverClasses}
-    ${isDragging ? 'opacity-50 z-50' : 'opacity-100'}
-    ${isOverlay ? 'shadow-2xl scale-105 z-50 cursor-grabbing ring-2' : ''}
+    ${isDragging ? 'opacity-30' : 'opacity-100'} 
+    ${isOverlay ? 'z-[999] cursor-grabbing !opacity-100' : ''}
   `;
 
-  // Parse text to separate main text from parentheses
-  // Matches "Main Text (Secondary Text)"
+  // Parse text
   const parts = text.match(/^(.*?)\s*(\(.*\))?$/);
   const mainText = parts ? parts[1] : text;
   const subText = parts && parts[2] ? parts[2] : null;
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className={baseClasses}>
+    <div 
+      // Only attach ID if it's the source item to avoid duplicate IDs with the overlay clone
+      id={!isOverlay ? id : undefined} 
+      ref={setNodeRef} 
+      {...listeners} 
+      {...attributes} 
+      className={baseClasses}
+      style={propStyle}
+    >
        {!disabled && <GripVertical size={16} className="opacity-40 flex-shrink-0" />}
        <div className="flex-1 leading-tight">
          <span className="block">{mainText}</span>

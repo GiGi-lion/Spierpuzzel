@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DndContext,
   DragOverlay,
   closestCenter,
   KeyboardSensor,
   MouseSensor,
-  TouchSensor,
   useSensor,
   useSensors,
   DragStartEvent,
   DragEndEvent,
+  defaultDropAnimationSideEffects,
+  DropAnimation
 } from '@dnd-kit/core';
 import {
   sortableKeyboardCoordinates,
@@ -23,6 +25,16 @@ import { History, RotateCcw, CheckCircle, TriangleAlert, Puzzle } from 'lucide-r
 
 const STORAGE_KEY = 'han-alo-puzzle-state-v1';
 
+const dropAnimation: DropAnimation = {
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: {
+        opacity: '0.5',
+      },
+    },
+  }),
+};
+
 export const Game: React.FC = () => {
   // State for items in the "bank" (not placed)
   const [bankItems, setBankItems] = useState<PuzzleItem[]>([]);
@@ -32,6 +44,7 @@ export const Game: React.FC = () => {
   
   // UI State
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeItemDimensions, setActiveItemDimensions] = useState<{ width: number; height: number } | null>(null);
   const [history, setHistory] = useState<GameHistory[]>([]);
   const [currentAttempt, setCurrentAttempt] = useState(1);
   const [lastScore, setLastScore] = useState<number | null>(null);
@@ -118,32 +131,41 @@ export const Game: React.FC = () => {
     }
   };
 
-  // Configure sensors - Standard config is fine now that buttons are outside DndContext
+  // Configure sensors - Removed TouchSensor and Mouse Constraints for direct PC feel
   const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 10,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    }),
+    useSensor(MouseSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
+    const { active } = event;
+    const currentId = active.id as string;
+    setActiveId(currentId);
     setErrorMessage(null);
     setSuccessMessage(null);
+
+    // Prioritize direct DOM measurement for exact visual match
+    const node = document.getElementById(currentId);
+    if (node) {
+      const rect = node.getBoundingClientRect();
+      setActiveItemDimensions({
+        width: rect.width,
+        height: rect.height
+      });
+    } else if (active.rect.current.initial) {
+      // Fallback to dnd-kit internal measurement
+      setActiveItemDimensions({
+        width: active.rect.current.initial.width,
+        height: active.rect.current.initial.height
+      });
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     const activeId = active.id as string;
     setActiveId(null);
+    setActiveItemDimensions(null);
 
     if (!over) return;
 
@@ -315,10 +337,10 @@ export const Game: React.FC = () => {
       >
         <div className="flex-1 flex overflow-hidden">
           
-          {/* LEFT: BANK (Scrollable) */}
+          {/* LEFT: BANK (Scrollable) - Removed hidden on mobile */}
           <div 
             id="bank-droppable"
-            className="w-[30%] md:w-[25%] bg-white/90 backdrop-blur-md border-r border-white/50 p-4 overflow-y-auto shadow-xl hidden md:block"
+            className="w-[30%] md:w-[25%] bg-white/90 backdrop-blur-md border-r border-white/50 p-4 overflow-y-auto shadow-xl"
           >
             <div className="flex justify-between items-center mb-4 border-b border-indigo-100 pb-2">
               <h2 className="font-bold text-indigo-900 text-sm uppercase tracking-wide">Puzzelstukken</h2>
@@ -372,18 +394,7 @@ export const Game: React.FC = () => {
               </div>
             )}
 
-            {/* Mobile Bank (Only visible on small screens) */}
-            <div className="md:hidden mb-8 bg-white/90 p-4 rounded-xl shadow-lg border border-indigo-100">
-               <h3 className="font-bold text-indigo-900 mb-2">Puzzelstukken ({bankItems.length})</h3>
-               <div className="flex gap-2 overflow-x-auto pb-2 snap-x">
-                  {bankItems.length === 0 && <span className="text-sm italic text-gray-500">Bank is leeg</span>}
-                  {bankItems.map(item => (
-                    <div key={item.id} className="min-w-[200px] snap-center">
-                       <PuzzlePiece id={item.id} text={item.text} type={item.type} />
-                    </div>
-                  ))}
-               </div>
-            </div>
+            {/* Removed Mobile Bank component here */}
 
             <div className="grid grid-cols-1 gap-6 max-w-5xl mx-auto pb-20">
               {/* Header Row */}
@@ -437,7 +448,7 @@ export const Game: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT: HISTORY (Scrollable, hidden on small screens) */}
+          {/* RIGHT: HISTORY (Scrollable) - Removed hidden on mobile/tablet */}
           <div className="w-[250px] bg-white/80 backdrop-blur-md border-l border-white/50 p-4 overflow-y-auto hidden xl:block">
              <div className="flex items-center gap-2 mb-4 text-indigo-900 font-bold text-lg border-b border-indigo-200/50 pb-2">
                <History size={20} />
@@ -462,16 +473,23 @@ export const Game: React.FC = () => {
 
         </div>
 
-        <DragOverlay>
-          {activeId ? (
-            <PuzzlePiece 
-              id={activeId} 
-              text={allItemsMap.get(activeId)?.text || ''} 
-              type={allItemsMap.get(activeId)?.type || ItemType.JOINT}
-              isOverlay 
-            />
-          ) : null}
-        </DragOverlay>
+        {createPortal(
+          <DragOverlay dropAnimation={dropAnimation}>
+            {activeId ? (
+              <PuzzlePiece 
+                id={activeId} 
+                text={allItemsMap.get(activeId)?.text || ''} 
+                type={allItemsMap.get(activeId)?.type || ItemType.JOINT}
+                isOverlay 
+                style={activeItemDimensions ? { 
+                  width: activeItemDimensions.width, 
+                  // Only constraining width to allow height to adapt to potential layout differences in overlay
+                } : undefined}
+              />
+            ) : null}
+          </DragOverlay>,
+          document.body
+        )}
       </DndContext>
     </div>
   );
