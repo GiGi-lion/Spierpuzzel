@@ -42,6 +42,9 @@ export const Game: React.FC = () => {
   // State for items placed in slots: Key = SlotID, Value = ItemID
   const [placements, setPlacements] = useState<Record<string, string>>({});
   
+  // State for tracking correct slots after checking
+  const [correctSlots, setCorrectSlots] = useState<Set<string>>(new Set());
+  
   // UI State
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeItemDimensions, setActiveItemDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -111,6 +114,7 @@ export const Game: React.FC = () => {
     const shuffled = [...joints, ...functions].sort(() => Math.random() - 0.5);
     setBankItems(shuffled);
     setPlacements({});
+    setCorrectSlots(new Set());
     setLastScore(null);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -143,6 +147,7 @@ export const Game: React.FC = () => {
     setActiveId(currentId);
     setErrorMessage(null);
     setSuccessMessage(null);
+    setCorrectSlots(new Set());
 
     // Prioritize direct DOM measurement for exact visual match
     const node = document.getElementById(currentId);
@@ -225,6 +230,7 @@ export const Game: React.FC = () => {
     }
 
     let correctUserPlacements = 0;
+    const newCorrectSlots = new Set<string>();
 
     // Iterate through each muscle group to validate
     groupedMuscles.forEach(([_, rows]) => {
@@ -247,6 +253,7 @@ export const Game: React.FC = () => {
                 if (matchIndex !== -1) {
                     validJoints.splice(matchIndex, 1); 
                     correctUserPlacements++;
+                    newCorrectSlots.add(jointSlotId);
                 }
             }
             
@@ -257,10 +264,13 @@ export const Game: React.FC = () => {
                 if (matchIndex !== -1) {
                     validFunctions.splice(matchIndex, 1);
                     correctUserPlacements++;
+                    newCorrectSlots.add(funcSlotId);
                 }
             }
         });
     });
+
+    setCorrectSlots(newCorrectSlots);
 
     const percentage = Math.round((correctUserPlacements / totalSlots) * 100);
     setLastScore(percentage);
@@ -422,6 +432,7 @@ export const Game: React.FC = () => {
                                 id={placements[`slot-joint-${row.id}`]} 
                                 text={allItemsMap.get(placements[`slot-joint-${row.id}`])?.text || ''} 
                                 type={ItemType.JOINT} 
+                                isCorrect={correctSlots.has(`slot-joint-${row.id}`)}
                               />
                             )}
                           </PuzzleSlot>
@@ -436,6 +447,7 @@ export const Game: React.FC = () => {
                                 id={placements[`slot-func-${row.id}`]} 
                                 text={allItemsMap.get(placements[`slot-func-${row.id}`])?.text || ''} 
                                 type={ItemType.FUNCTION} 
+                                isCorrect={correctSlots.has(`slot-func-${row.id}`)}
                               />
                             )}
                           </PuzzleSlot>

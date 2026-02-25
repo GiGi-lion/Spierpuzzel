@@ -9,10 +9,19 @@ interface PuzzlePieceProps {
   type: ItemType;
   isOverlay?: boolean;
   disabled?: boolean;
-  style?: React.CSSProperties; // Added style prop
+  style?: React.CSSProperties;
+  isCorrect?: boolean;
 }
 
-export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({ id, text, type, isOverlay, disabled, style: propStyle }) => {
+export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({ 
+  id, 
+  text, 
+  type, 
+  isOverlay, 
+  disabled, 
+  style: propStyle,
+  isCorrect 
+}) => {
   // We disable the draggable hook if this component is being rendered 
   // inside the DragOverlay (isOverlay). 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -30,11 +39,16 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({ id, text, type, isOver
   const hoverClasses = !disabled && !isOverlay ? (type === ItemType.JOINT ? '' : '') : '';
   const cursorClass = disabled ? 'cursor-not-allowed opacity-90' : 'cursor-grab active:cursor-grabbing';
 
+  // Add green border/ring if correct
+  const correctClasses = isCorrect 
+    ? 'ring-2 ring-emerald-500 border-emerald-500 !bg-emerald-50' 
+    : '';
+
   const baseClasses = `
     relative flex items-center gap-2 p-3 rounded-md border
     ${cursorClass} text-sm font-medium
     transition-all duration-200 select-none touch-none w-full min-h-[50px]
-    ${typeColor} ${hoverClasses}
+    ${!isCorrect ? typeColor : ''} ${correctClasses} ${hoverClasses}
     ${isDragging ? 'opacity-30' : 'opacity-100'} 
     ${isOverlay ? 'z-[999] cursor-grabbing !opacity-100' : ''}
   `;
@@ -61,6 +75,13 @@ export const PuzzlePiece: React.FC<PuzzlePieceProps> = ({ id, text, type, isOver
            <span className="block text-xs font-normal opacity-70 mt-0.5">{subText}</span>
          )}
        </div>
+       {isCorrect && (
+         <div className="absolute -top-2 -right-2 bg-emerald-500 text-white rounded-full p-0.5 shadow-sm">
+           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+             <polyline points="20 6 9 17 4 12"></polyline>
+           </svg>
+         </div>
+       )}
     </div>
   );
 };
