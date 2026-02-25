@@ -1,13 +1,24 @@
-import React from 'react';
-import { Game } from './components/Game';
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-function App() {
-  return (
-    // bg-transparent because the background is on the body in index.html
-    <div className="antialiased text-stone-800 bg-transparent min-h-screen">
-      <Game />
-    </div>
-  );
-}
+node_modules
+dist
+dist-ssr
+*.local
 
-export default App;
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

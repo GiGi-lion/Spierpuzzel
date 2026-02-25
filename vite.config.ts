@@ -1,23 +1,30 @@
-import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+export enum ItemType {
+  JOINT = 'JOINT',
+  FUNCTION = 'FUNCTION',
+}
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      server: {
-        port: 3000,
-        host: '0.0.0.0',
-      },
-      plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
-});
+export interface PuzzleItem {
+  id: string;
+  text: string;
+  type: ItemType;
+  originalGroup: string; // Used to check correctness
+}
+
+export interface PuzzleRowData {
+  id: string;
+  muscleName: string;
+  correctJoint: string;
+  correctFunction: string;
+}
+
+export interface DragItem {
+  id: string;
+  type: ItemType;
+  text: string;
+}
+
+export interface GameHistory {
+  attemptNumber: number;
+  percentage: number;
+  timestamp: Date;
+}

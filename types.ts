@@ -1,30 +1,29 @@
-export enum ItemType {
-  JOINT = 'JOINT',
-  FUNCTION = 'FUNCTION',
-}
-
-export interface PuzzleItem {
-  id: string;
-  text: string;
-  type: ItemType;
-  originalGroup: string; // Used to check correctness
-}
-
-export interface PuzzleRowData {
-  id: string;
-  muscleName: string;
-  correctJoint: string;
-  correctFunction: string;
-}
-
-export interface DragItem {
-  id: string;
-  type: ItemType;
-  text: string;
-}
-
-export interface GameHistory {
-  attemptNumber: number;
-  percentage: number;
-  timestamp: Date;
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ],
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
 }
